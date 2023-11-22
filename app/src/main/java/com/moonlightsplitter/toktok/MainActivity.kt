@@ -6,12 +6,14 @@ import android.util.Log
 import androidx.viewpager2.widget.ViewPager2
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.moonlightsplitter.toktok.adapter.AdapterVideo
 import com.moonlightsplitter.toktok.adapter.VideoPagerAdapter
 import com.moonlightsplitter.toktok.databinding.ActivityMainBinding
 import com.moonlightsplitter.toktok.item.ExoPlayerItem
 import com.moonlightsplitter.toktok.model.VideoModel
 import com.moonlightsplitter.toktok.utils.Constants
+import com.moonlightsplitter.toktok.utils.PreCachingWork
 
 class MainActivity : AppCompatActivity() {
 
@@ -102,6 +104,7 @@ class MainActivity : AppCompatActivity() {
             urlList[index] = videoModel.url
         }
         val inputData = Data.Builder().putStringArray(Constants.KEY_STORIES_LIST_DATA, urlList).build()
-        val preCachingWork = OneTimeWorkRequestBuilder<>()
+        val preCachingWork = OneTimeWorkRequestBuilder<PreCachingWork>().setInputData(inputData).build()
+        WorkManager.getInstance(this).enqueue(preCachingWork)
     }
 }
