@@ -3,6 +3,7 @@ package com.moonlightsplitter.toktok.adapter
 import android.content.Context
 import android.net.Uri
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
@@ -37,6 +38,14 @@ class AdapterVideo(
                 override fun onPlayerError(error: PlaybackException) {
                     super.onPlayerError(error)
                     Toast.makeText(context, "Cannot play this video", Toast.LENGTH_LONG).show()
+                }
+
+                override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+                    if (playbackState == Player.STATE_BUFFERING) {
+                        binding.progressBar.visibility = View.VISIBLE
+                    } else if (playbackState == Player.STATE_READY) {
+                        binding.progressBar.visibility = View.GONE
+                    }
                 }
             })
 

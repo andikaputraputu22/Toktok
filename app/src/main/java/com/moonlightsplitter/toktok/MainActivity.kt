@@ -2,16 +2,22 @@ package com.moonlightsplitter.toktok
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.viewpager2.widget.ViewPager2
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
 import com.moonlightsplitter.toktok.adapter.AdapterVideo
+import com.moonlightsplitter.toktok.adapter.VideoPagerAdapter
 import com.moonlightsplitter.toktok.databinding.ActivityMainBinding
 import com.moonlightsplitter.toktok.item.ExoPlayerItem
 import com.moonlightsplitter.toktok.model.VideoModel
+import com.moonlightsplitter.toktok.utils.Constants
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: AdapterVideo
+    private lateinit var videoPagerAdapter: VideoPagerAdapter
     private val exoPlayerItems = ArrayList<ExoPlayerItem>()
     private val videos = listOf(
         VideoModel("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
@@ -44,8 +50,7 @@ class MainActivity : AppCompatActivity() {
                 val previousIndex = exoPlayerItems.indexOfFirst { it.exoPlayer.isPlaying }
                 if (previousIndex != -1) {
                     val player = exoPlayerItems[previousIndex].exoPlayer
-                    player.pause()
-                    player.playWhenReady = false
+                    player.release()
                 }
 
                 val newIndex = exoPlayerItems.indexOfFirst { it.position == position }
@@ -54,6 +59,8 @@ class MainActivity : AppCompatActivity() {
                     player.playWhenReady = true
                     player.play()
                 }
+
+                Log.e("Anjay", "Hasilnya: $position - $previousIndex - $newIndex")
             }
         })
     }
@@ -87,5 +94,14 @@ class MainActivity : AppCompatActivity() {
                 player.clearMediaItems()
             }
         }
+    }
+
+    private fun startPreCaching(videoList: ArrayList<VideoModel>) {
+        val urlList = arrayOfNulls<String>(videoList.size)
+        videoList.mapIndexed { index, videoModel ->
+            urlList[index] = videoModel.url
+        }
+        val inputData = Data.Builder().putStringArray(Constants.KEY_STORIES_LIST_DATA, urlList).build()
+        val preCachingWork = OneTimeWorkRequestBuilder<>()
     }
 }
