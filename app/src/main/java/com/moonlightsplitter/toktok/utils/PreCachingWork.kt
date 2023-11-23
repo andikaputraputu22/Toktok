@@ -2,12 +2,10 @@ package com.moonlightsplitter.toktok.utils
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DataSpec
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.upstream.cache.Cache
 import com.google.android.exoplayer2.util.Util
@@ -22,7 +20,6 @@ class PreCachingWork(
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
 
-    private var cacheDataSourceFactory: CacheDataSource.Factory? = null
     private val simpleCache = MyApp.simpleCache
 
     override suspend fun doWork(): Result = coroutineScope {
@@ -38,40 +35,38 @@ class PreCachingWork(
                 val dataSource = DefaultHttpDataSource.Factory()
                     .setUserAgent(Util.getUserAgent(applicationContext, "toktok")).createDataSource()
 
-//                preloadVideo(
-//                    dataSpec,
-//                    simpleCache,
-//                    dataSource,
-//                    CacheUtil.ProgressListener { requestLength: Long, bytesCached: Long, newBytesCached: Long ->
-//                        val downloadPercentage = (bytesCached * 100.0
-//                                / requestLength)
-//                        Log.d(TAG, "downloadPercentage: $downloadPercentage")
-//                    }
-//                )
+                preloadVideo(
+                    dataSpec,
+                    simpleCache,
+                    dataSource
+                )
             }
         }
         jobs?.joinAll()
         Result.success()
     }
 
-//    private fun preloadVideo(
-//        dataSpec: DataSpec?,
-//        cache: Cache?,
-//        upstream: DataSource?,
-//        progressListener: CacheUtil.ProgressListener?
-//    ) {
-//        Log.d(TAG, "preloadVideo")
-//        try {
-//            CacheUtil.cache(
-//                dataSpec,
-//                cache,
-//                CacheUtil.DEFAULT_CACHE_KEY_FACTORY,
-//                upstream,
-//                progressListener,
-//                null
-//            )
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-//    }
+    private fun preloadVideo(
+        dataSpec: DataSpec?,
+        cache: Cache?,
+        dataSource: DataSource
+    ) {
+        try {
+            val upstreamFactory = DataSource.Factory { dataSource }
+            val cacheDataSourceFactory = cache?.let {
+                CacheDataSource.Factory()
+                    .setCache(it)
+                    .setUpstreamDataSourceFactory(upstreamFactory)
+                    .setCacheWriteDataSinkFactory(null)
+                    .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+            }
+
+            val cacheDataSource = cacheDataSourceFactory?.createDataSource()
+            val dataSpecUri = dataSpec?.uri ?: throw IllegalArgumentException("DataSpec URI is null")
+
+            cacheDataSource?.open(DataSpec(dataSpecUri))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }
